@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title id="pageTitle">Event Registration Portal</title>
+  <title>Event Registration Portal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Tailwind CSS for elegant visual design -->
@@ -10,9 +10,6 @@
   
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- QR Code Library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
     /* Premium custom scrollbar styling */
@@ -50,12 +47,12 @@
       <!-- Brand & Logo -->
       <div class="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
         <div class="bg-white p-1.5 rounded-2xl border border-slate-200/80 shadow-md flex items-center justify-center shrink-0">
-          <i id="eventIcon" class="fa-solid fa-calendar-check text-2xl sm:text-3xl text-indigo-600"></i>
+          <i class="fa-solid fa-calendar-check text-2xl sm:text-3xl text-indigo-600"></i>
         </div>
         <div>
           <div class="flex items-center gap-2">
             <h1 id="eventTitle" class="text-lg sm:text-xl font-black tracking-tight bg-gradient-to-r from-indigo-600 via-sky-600 to-emerald-600 bg-clip-text text-transparent">
-              Event 2026
+              PCC 2026
             </h1>
             <span id="syncStatusBadge" class="text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded uppercase">QR Enabled</span>
           </div>
@@ -69,7 +66,7 @@
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
           <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
         </span>
-        <span id="sandboxLabel" class="font-medium tracking-wide">Live Registration</span>
+        <span class="font-medium tracking-wide">Live Registration</span>
       </div>
 
     </div>
@@ -173,7 +170,7 @@
               <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                 <i class="fa-solid fa-network-wired text-xs"></i>
               </span>
-              <select id="sector" class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 placeholder-slate-400 outline-none transition-all">
+              <select id="sector" class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 placeholder-slate-400 outline-none transition-all appearance-none cursor-pointer">
                 <option value="">Select Sector</option>
                 <option value="Government">Government</option>
                 <option value="Private">Private / Corporate</option>
@@ -227,8 +224,8 @@
 
         <div class="mt-4 space-y-4">
           <!-- QR Code Section -->
-          <div class="bg-white p-3 rounded-lg border border-slate-200 flex items-center justify-center">
-            <div id="qrcodeContainer" class="flex items-center justify-center"></div>
+          <div class="bg-white p-4 rounded-lg border border-slate-200 flex items-center justify-center">
+            <canvas id="qrcodeCanvas" width="200" height="200"></canvas>
           </div>
 
           <!-- Attendee ID -->
@@ -287,6 +284,7 @@
   </footer>
 
   <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.5.3/qrcode.min.js"></script>
   <script>
     // ==================== CONFIGURATION ====================
     const CONFIG = {
@@ -300,7 +298,6 @@
 
     // Initialize
     window.attendeeData = null;
-    window.qrcodeInstance = null;
 
     // Set event branding on page load
     document.addEventListener('DOMContentLoaded', function() {
@@ -311,7 +308,7 @@
     function initializeEventBranding() {
       const eventTitle = `${CONFIG.EVENT_NAME} ${CONFIG.EVENT_YEAR}`;
       document.getElementById('eventTitle').textContent = eventTitle;
-      document.getElementById('pageTitle').textContent = `${eventTitle} - Registration Portal`;
+      document.title = `${eventTitle} - Registration Portal`;
       document.getElementById('eventSubtitle').textContent = `${CONFIG.ORGANIZATION} • Smart Registration`;
       document.getElementById('footerTitle').textContent = eventTitle;
     }
@@ -402,9 +399,6 @@
           qrUrl: `${CONFIG.BASE_URL}/attendee/${attendeeId}`
         };
 
-        // Optional: Send to backend
-        // await submitToBackend(window.attendeeData);
-
         // Display delegate card with QR
         displayAttendeeCard();
         
@@ -443,35 +437,29 @@
       document.getElementById('thankYouSection').classList.remove('hidden');
     }
 
-    // Generate QR Code
+    // Generate QR Code using Canvas
     function generateQRCode(text) {
-      // Clear previous QR code
-      const container = document.getElementById('qrcodeContainer');
-      container.innerHTML = '';
+      const canvas = document.getElementById('qrcodeCanvas');
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
       
-      // Create new QR code
-      window.qrcodeInstance = new QRCode(container, {
+      // Use QRCode.js with canvas
+      new QRCode({
         text: text,
-        width: 150,
-        height: 150,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
+        width: 200,
+        height: 200,
+        canvas: canvas,
         correctLevel: QRCode.CorrectLevel.H
       });
     }
 
     // Download QR Code
     window.downloadQRCode = function() {
-      if (!window.qrcodeInstance) return;
-      
-      const canvas = document.querySelector('#qrcodeContainer canvas');
-      if (canvas) {
-        const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png');
-        link.download = `${window.attendeeData.id}-QR.png`;
-        link.click();
-        showNotification("QR Code downloaded successfully!", "success");
-      }
+      const canvas = document.getElementById('qrcodeCanvas');
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = `${window.attendeeData.id}-QR.png`;
+      link.click();
+      showNotification("QR Code downloaded successfully!", "success");
     };
 
     // Reset form state
@@ -496,24 +484,6 @@
           return 'bg-purple-50 text-purple-700 border border-purple-100';
         default:
           return 'bg-slate-100 text-slate-600 border border-slate-200';
-      }
-    }
-
-    // Optional: Submit to backend
-    async function submitToBackend(data) {
-      if (!CONFIG.API_ENDPOINT) return;
-      
-      try {
-        const response = await fetch(CONFIG.API_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        
-        if (!response.ok) throw new Error('API request failed');
-        return await response.json();
-      } catch (error) {
-        console.warn('Backend submission failed (non-blocking):', error);
       }
     }
   </script>
