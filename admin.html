@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Event Organizer Admin Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    @keyframes slideIn {
+      0% { opacity: 0; transform: translateX(-20px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    .animate-slide-in {
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .sidebar-active {
+      @apply bg-indigo-50 border-l-4 border-indigo-600 text-indigo-600;
+    }
+
+    .stat-card {
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .table-row-hover:hover {
+      background-color: rgba(99, 102, 241, 0.05);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-slate-100 to-indigo-50 text-slate-800 flex min-h-screen">
+
+  <!-- Sidebar Navigation -->
+  <aside class="w-64 bg-white border-r border-slate-200 shadow-lg flex flex-col sticky top-0 h-screen overflow-y-auto">
+    <!-- Logo Section -->
+    <div class="p-6 border-b border-slate-200">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="bg-indigo-600 p-2.5 rounded-lg flex items-center justify-center">
+          <i class="fa-solid fa-gear text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-black text-slate-900">PCC 2026</h1>
+          <p class="text-[10px] text-slate-500 font-medium">Organizer Portal</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Menu -->
+    <nav class="flex-grow px-3 py-6 space-y-2">
+      <button onclick="switchView('dashboard')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all sidebar-active" data-view="dashboard">
+        <i class="fa-solid fa-chart-line w-5"></i>
+        <span>Dashboard</span>
+      </button>
+
+      <button onclick="switchView('attendees')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all" data-view="attendees">
+        <i class="fa-solid fa-users w-5"></i>
+        <span>Attendees</span>
+      </button>
+
+      <button onclick="switchView('checkin')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all" data-view="checkin">
+        <i class="fa-solid fa-qrcode w-5"></i>
+        <span>Check-in</span>
+      </button>
+
+      <button onclick="switchView('analytics')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all" data-view="analytics">
+        <i class="fa-solid fa-chart-bar w-5"></i>
+        <span>Analytics</span>
+      </button>
+
+      <button onclick="switchView('settings')" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-all" data-view="settings">
+        <i class="fa-solid fa-sliders w-5"></i>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <!-- Footer -->
+    <div class="p-4 border-t border-slate-200 text-center">
+      <button onclick="logout()" class="w-full py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-all">
+        <i class="fa-solid fa-sign-out-alt mr-2"></i>Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="flex-grow flex flex-col overflow-hidden">
+    
+    <!-- Top Bar -->
+    <header class="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm">
+      <div>
+        <h2 id="pageTitle" class="text-2xl font-bold text-slate-900">Dashboard</h2>
+        <p id="pageSubtitle" class="text-sm text-slate-500 mt-1">Manage your event efficiently</p>
+      </div>
+      
+      <div class="flex items-center gap-4">
+        <div class="hidden sm:flex items-center gap-2 text-sm">
+          <span class="relative flex h-2.5 w-2.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          </span>
+          <span class="text-slate-600 font-medium">Live</span>
+        </div>
+        
+        <div class="flex items-center gap-3 pl-4 border-l border-slate-200">
+          <div class="text-right hidden sm:block">
+            <p class="text-sm font-semibold text-slate-900">Admin User</p>
+            <p class="text-xs text-slate-500">Event Manager</p>
+          </div>
+          <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
+            <i class="fa-solid fa-user"></i>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content Container -->
+    <div class="flex-grow overflow-y-auto p-8">
+      
+      <!-- DASHBOARD VIEW -->
+      <div id="dashboardView" class="view-content animate-fade-in space-y-8">
+        
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          
+          <div class="stat-card bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-slate-500 font-medium mb-1">Total Registrations</p>
+                <p id="totalRegistrations" class="text-3xl font-black text-slate-900">0</p>
+                <p class="text-xs text-emerald-600 mt-2 font-semibold"><i class="fa-solid fa-arrow-up text-xs mr-1"></i>Today</p>
+              </div>
+              <div class="bg-indigo-100 p-3.5 rounded-xl">
+                <i class="fa-solid fa-users text-2xl text-indigo-600"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-slate-500 font-medium mb-1">Checked In</p>
+                <p id="totalCheckedIn" class="text-3xl font-black text-slate-900">0</p>
+                <p class="text-xs text-emerald-600 mt-2 font-semibold"><span id="checkinPercentage">0</span>% of total</p>
+              </div>
+              <div class="bg-emerald-100 p-3.5 rounded-xl">
+                <i class="fa-solid fa-check-circle text-2xl text-emerald-600"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-slate-500 font-medium mb-1">Not Checked In</p>
+                <p id="notCheckedIn" class="text-3xl font-black text-slate-900">0</p>
+                <p class="text-xs text-amber-600 mt-2 font-semibold"><span id="notCheckinPercentage">0</span>% pending</p>
+              </div>
+              <div class="bg-amber-100 p-3.5 rounded-xl">
+                <i class="fa-solid fa-clock text-2xl text-amber-600"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-slate-500 font-medium mb-1">by Sector</p>
+                <p id="sectorCount" class="text-3xl font-black text-slate-900">0</p>
+                <p class="text-xs text-indigo-600 mt-2 font-semibold">Distribution</p>
+              </div>
+              <div class="bg-indigo-100 p-3.5 rounded-xl">
+                <i class="fa-solid fa-pie-chart text-2xl text-indigo-600"></i>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Registration Timeline -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-indigo-600"></i>
+              Registration Timeline
+            </h3>
+            <div id="registrationChart" class="h-64 flex items-center justify-center text-slate-400">
+              <p class="text-sm">Chart will appear here</p>
+            </div>
+          </div>
+
+          <!-- Sector Distribution -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-pie-chart text-emerald-600"></i>
+              Sector Distribution
+            </h3>
+            <div id="sectorChart" class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-slate-600">Government</span>
+                <div class="flex-grow mx-3 bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div id="govBar" class="bg-emerald-500 h-full rounded-full" style="width: 0%"></div>
+                </div>
+                <span id="govCount" class="text-sm font-bold text-slate-900">0</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-slate-600">Private</span>
+                <div class="flex-grow mx-3 bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div id="privBar" class="bg-sky-500 h-full rounded-full" style="width: 0%"></div>
+                </div>
+                <span id="privCount" class="text-sm font-bold text-slate-900">0</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-slate-600">Academia</span>
+                <div class="flex-grow mx-3 bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div id="acadBar" class="bg-amber-500 h-full rounded-full" style="width: 0%"></div>
+                </div>
+                <span id="acadCount" class="text-sm font-bold text-slate-900">0</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-slate-600">NGO</span>
+                <div class="flex-grow mx-3 bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div id="ngoBar" class="bg-purple-500 h-full rounded-full" style="width: 0%"></div>
+                </div>
+                <span id="ngoCount" class="text-sm font-bold text-slate-900">0</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Recent Registrations -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+          <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-list text-indigo-600"></i>
+            Recent Registrations
+          </h3>
+          <div id="recentRegistrationsList" class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-slate-200">
+                  <th class="text-left py-3 px-4 font-semibold text-slate-600">Name</th>
+                  <th class="text-left py-3 px-4 font-semibold text-slate-600">Email</th>
+                  <th class="text-left py-3 px-4 font-semibold text-slate-600">Sector</th>
+                  <th class="text-left py-3 px-4 font-semibold text-slate-600">Status</th>
+                  <th class="text-left py-3 px-4 font-semibold text-slate-600">Time</th>
+                </tr>
+              </thead>
+              <tbody id="recentRegistrationsTable">
+                <tr><td colspan="5" class="text-center py-8 text-slate-400">No registrations yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ATTENDEES VIEW -->
+      <div id="attendeesView" class="view-content hidden animate-fade-in">
+        
+        <div class="space-y-6">
+          
+          <!-- Search & Filter -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <div class="flex flex-col md:flex-row gap-4 items-end">
+              <div class="flex-grow">
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Search Attendees</label>
+                <input type="text" id="attendeeSearch" placeholder="Search by name, email, or ID..." 
+                       class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
+              </div>
+              <button onclick="exportAttendees()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-all flex items-center gap-2">
+                <i class="fa-solid fa-download"></i>
+                Export CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Attendees Table -->
+          <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-lg">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th class="text-left py-4 px-6 font-semibold text-slate-700">ID</th>
+                    <th class="text-left py-4 px-6 font-semibold text-slate-700">Name</th>
+                    <th class="text-left py-4 px-6 font-semibold text-slate-700">Email</th>
+                    <th class="text-left py-4 px-6 font-semibold text-slate-700">Institution</th>
+                    <th class="text-left py-4 px-6 font-semibold text-slate-700">Sector</th>
+                    <th class="text-center py-4 px-6 font-semibold text-slate-700">Check-in</th>
+                    <th class="text-center py-4 px-6 font-semibold text-slate-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="attendeesTableBody">
+                  <tr><td colspan="7" class="text-center py-8 text-slate-400">No attendees registered yet</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- CHECK-IN VIEW -->
+      <div id="checkinView" class="view-content hidden animate-fade-in">
+        
+        <div class="max-w-2xl mx-auto space-y-6">
+          
+          <!-- QR Scanner -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-lg text-center">
+            <h3 class="text-xl font-bold text-slate-900 mb-2">Scan QR Code</h3>
+            <p class="text-slate-500 mb-6">Point camera at attendee QR code to check them in</p>
+            
+            <div id="qrScannerContainer" class="bg-slate-100 rounded-xl p-8 mb-6 flex items-center justify-center min-h-96">
+              <div class="text-center text-slate-400">
+                <i class="fa-solid fa-camera text-5xl mb-4"></i>
+                <p class="font-semibold">Camera access required</p>
+                <p class="text-sm mt-2">Enable camera to scan QR codes</p>
+              </div>
+            </div>
+
+            <button onclick="startQRScanner()" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all mb-3">
+              <i class="fa-solid fa-video mr-2"></i>Start Scanner
+            </button>
+
+            <button onclick="stopQRScanner()" class="w-full py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-all">
+              <i class="fa-solid fa-stop mr-2"></i>Stop Scanner
+            </button>
+          </div>
+
+          <!-- Manual Check-in -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-keyboard text-indigo-600"></i>
+              Manual Check-in
+            </h3>
+            <div class="flex gap-3">
+              <input type="text" id="attendeeIdInput" placeholder="Enter Attendee ID..." 
+                     class="flex-grow px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
+              <button onclick="manualCheckin()" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all">
+                <i class="fa-solid fa-check mr-2"></i>Check In
+              </button>
+            </div>
+          </div>
+
+          <!-- Last Checked In -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-history text-emerald-600"></i>
+              Recent Check-ins
+            </h3>
+            <div id="recentCheckinsTable" class="space-y-3">
+              <div class="text-center py-8 text-slate-400">
+                <p class="text-sm">No check-ins yet</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ANALYTICS VIEW -->
+      <div id="analyticsView" class="view-content hidden animate-fade-in space-y-6">
+        
+        <!-- Analytics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <p class="text-sm text-slate-500 font-medium mb-2">Registration Rate</p>
+            <p class="text-4xl font-black text-indigo-600 mb-2"><span id="regRate">0</span>%</p>
+            <p class="text-xs text-slate-400">Per hour average</p>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <p class="text-sm text-slate-500 font-medium mb-2">Check-in Rate</p>
+            <p class="text-4xl font-black text-emerald-600 mb-2"><span id="checkinRate">0</span>%</p>
+            <p class="text-xs text-slate-400">Of registered attendees</p>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <p class="text-sm text-slate-500 font-medium mb-2">Peak Registration</p>
+            <p class="text-4xl font-black text-amber-600 mb-2"><span id="peakTime">--</span></p>
+            <p class="text-xs text-slate-400">Busiest hour</p>
+          </div>
+
+        </div>
+
+        <!-- Detailed Analytics -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <h3 class="text-lg font-bold text-slate-900 mb-4">Hourly Registrations</h3>
+            <div id="hourlyChart" class="space-y-2">
+              <p class="text-center text-slate-400 py-8">Loading data...</p>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <h3 class="text-lg font-bold text-slate-900 mb-4">By Position</h3>
+            <div id="positionChart" class="space-y-2">
+              <p class="text-center text-slate-400 py-8">Loading data...</p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- SETTINGS VIEW -->
+      <div id="settingsView" class="view-content hidden animate-fade-in space-y-6">
+        
+        <!-- Event Settings -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+          <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-calendar text-indigo-600"></i>
+            Event Configuration
+          </h3>
+          
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-2">Event Name</label>
+              <input type="text" id="eventNameSetting" value="Philippine Chemistry Congress" 
+                     class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Organization</label>
+                <input type="text" id="organizationSetting" value="Mars Laboratory" 
+                       class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Event Code</label>
+                <input type="text" id="eventCodeSetting" value="PCC" 
+                       class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Event Year</label>
+                <input type="number" id="eventYearSetting" value="2026" 
+                       class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Base URL</label>
+                <input type="text" id="baseUrlSetting" value="https://yourdomain.com" 
+                       class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
+              </div>
+            </div>
+
+            <button onclick="saveSettings()" class="w-full mt-4 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all">
+              <i class="fa-solid fa-save mr-2"></i>Save Settings
+            </button>
+          </div>
+        </div>
+
+        <!-- Data Management -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
+          <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-database text-amber-600"></i>
+            Data Management
+          </h3>
+          
+          <div class="space-y-3">
+            <button onclick="clearAllData()" class="w-full py-3 px-4 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl transition-all border border-rose-200">
+              <i class="fa-solid fa-trash mr-2"></i>Clear All Registrations
+            </button>
+            <p class="text-xs text-slate-500 text-center">This action cannot be undone. Please backup your data first.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-md"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.5.3/qrcode.min.js"></script>
+  <script>
+    // ==================== CONFIGURATION ====================
+    const CONFIG = {
+      EVENT_NAME: 'Philippine Chemistry Congress',
+      EVENT_YEAR: 2026,
+      EVENT_CODE: 'PCC',
+      ORGANIZATION: 'Mars Laboratory',
+      BASE_URL: 'https://yourdomain.com',
+      API_ENDPOINT: '/api/attendees'
+    };
+
+    // ==================== LOCAL STORAGE ====================
+    const STORAGE_KEY = 'pcc_registrations';
+    const CHECKIN_KEY = 'pcc_checkins';
+
+    function loadAttendees() {
+      const data = localStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : [];
+    }
+
+    function saveAttendees(attendees) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(attendees));
+      updateDashboard();
+    }
+
+    function loadCheckIns() {
+      const data = localStorage.getItem(CHECKIN_KEY);
+      return data ? JSON.parse(data) : {};
+    }
+
+    function saveCheckIns(checkins) {
+      localStorage.setItem(CHECKIN_KEY, JSON.stringify(checkins));
+      updateDashboard();
+    }
+
+    // ==================== NOTIFICATION SYSTEM ====================
+    function showNotification(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const colors = {
+        success: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+        error: 'bg-rose-50 border-rose-200 text-rose-800',
+        info: 'bg-indigo-50 border-indigo-200 text-indigo-800'
+      };
+
+      const icons = {
+        success: 'fa-check-circle text-emerald-500',
+        error: 'fa-exclamation-circle text-rose-500',
+        info: 'fa-info-circle text-indigo-500'
+      };
+
+      toast.className = `flex items-center gap-3 px-4 py-3 border rounded-lg ${colors[type]} shadow-lg text-sm font-semibold`;
+      toast.innerHTML = `
+        <i class="fa-solid ${icons[type]}"></i>
+        <span>${message}</span>
+      `;
+
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ==================== VIEW SWITCHING ====================
+    function switchView(viewName) {
+      // Hide all views
+      document.querySelectorAll('.view-content').forEach(el => el.classList.add('hidden'));
+      
+      // Show selected view
+      document.getElementById(viewName + 'View').classList.remove('hidden');
+      
+      // Update nav items
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('sidebar-active'));
+      document.querySelector(`[data-view="${viewName}"]`).classList.add('sidebar-active');
+
+      // Update page title
+      const titles = {
+        dashboard: 'Dashboard',
+        attendees: 'Attendees',
+        checkin: 'Check-in',
+        analytics: 'Analytics',
+        settings: 'Settings'
+      };
+
+      const subtitles = {
+        dashboard: 'Overview of your event registration',
+        attendees: 'Manage registered attendees',
+        checkin: 'Check in attendees with QR code',
+        analytics: 'Detailed event statistics',
+        settings: 'Configure event parameters'
+      };
+
+      document.getElementById('pageTitle').textContent = titles[viewName];
+      document.getElementById('pageSubtitle').textContent = subtitles[viewName];
+
+      // Load view-specific data
+      if (viewName === 'attendees') {
+        loadAttendeesView();
+      } else if (viewName === 'analytics') {
+        loadAnalyticsView();
+      }
+    }
+
+    // ==================== DASHBOARD ====================
+    function updateDashboard() {
+      const attendees = loadAttendees();
+      const checkins = loadCheckIns();
+
+      const totalReg = attendees.length;
+      const totalCI = Object.keys(checkins).length;
+      const notCI = totalReg - totalCI;
+
+      // Update statistics
+      document.getElementById('totalRegistrations').textContent = totalReg;
+      document.getElementById('totalCheckedIn').textContent = totalCI;
+      document.getElementById('notCheckedIn').textContent = notCI;
+
+      if (totalReg > 0) {
+        document.getElementById('checkinPercentage').textContent = Math.round((totalCI / totalReg) * 100);
+        document.getElementById('notCheckinPercentage').textContent = Math.round((notCI / totalReg) * 100);
+      }
+
+      // Count sectors
+      const sectors = {};
+      attendees.forEach(a => {
+        sectors[a.sector || 'Attendee'] = (sectors[a.sector || 'Attendee'] || 0) + 1;
+      });
+
+      document.getElementById('sectorCount').textContent = Object.keys(sectors).length;
+
+      // Update sector bars
+      updateSectorBars(sectors);
+
+      // Update recent registrations
+      updateRecentRegistrations(attendees.slice(-5).reverse());
+    }
+
+    function updateSectorBars(sectors) {
+      const total = Object.values(sectors).reduce((a, b) => a + b, 0);
+
+      const sectorMap = {
+        'Government': { bar: 'govBar', count: 'govCount' },
+        'Private': { bar: 'privBar', count: 'privCount' },
+        'Academia': { bar: 'acadBar', count: 'acadCount' },
+        'NGO': { bar: 'ngoBar', count: 'ngoCount' }
+      };
+
+      Object.entries(sectorMap).forEach(([sector, ids]) => {
+        const count = sectors[sector] || 0;
+        const percentage = total > 0 ? (count / total) * 100 : 0;
+        
+        document.getElementById(ids.bar).style.width = percentage + '%';
+        document.getElementById(ids.count).textContent = count;
+      });
+    }
+
+    function updateRecentRegistrations(recent) {
+      const tbody = document.getElementById('recentRegistrationsTable');
+      const checkins = loadCheckIns();
+
+      if (recent.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">No registrations yet</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = recent.map(attendee => {
+        const isCheckedIn = checkins[attendee.id];
+        const statusClass = isCheckedIn ? 'text-emerald-600' : 'text-amber-600';
+        const statusIcon = isCheckedIn ? 'fa-check-circle' : 'fa-clock';
+        const statusText = isCheckedIn ? 'Checked In' : 'Pending';
+
+        return `
+          <tr class="border-b border-slate-200 table-row-hover">
+            <td class="py-3 px-4 font-mono text-slate-700">${attendee.name.split(' ')[0]}</td>
+            <td class="py-3 px-4 text-slate-600">${attendee.email}</td>
+            <td class="py-3 px-4"><span class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs font-semibold">${attendee.sector || 'Attendee'}</span></td>
+            <td class="py-3 px-4"><span class="${statusClass} font-semibold text-sm"><i class="fa-solid ${statusIcon} mr-1"></i>${statusText}</span></td>
+            <td class="py-3 px-4 text-slate-500 text-xs">${new Date(attendee.registeredAt).toLocaleTimeString()}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ==================== ATTENDEES VIEW ====================
+    function loadAttendeesView() {
+      const attendees = loadAttendees();
+      const checkins = loadCheckIns();
+
+      const tbody = document.getElementById('attendeesTableBody');
+
+      if (attendees.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400">No attendees registered yet</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = attendees.map(attendee => {
+        const isCheckedIn = checkins[attendee.id];
+        const statusBadge = isCheckedIn 
+          ? '<span class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold flex items-center gap-1 justify-center"><i class="fa-solid fa-check-circle"></i>Checked In</span>'
+          : '<span class="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold flex items-center gap-1 justify-center"><i class="fa-solid fa-clock"></i>Pending</span>';
+
+        return `
+          <tr class="border-b border-slate-200 table-row-hover">
+            <td class="py-4 px-6 font-mono font-bold text-indigo-600">${attendee.id}</td>
+            <td class="py-4 px-6 font-semibold text-slate-900">${attendee.name}</td>
+            <td class="py-4 px-6 text-slate-600">${attendee.email}</td>
+            <td class="py-4 px-6 text-slate-600 text-sm">${attendee.institution}</td>
+            <td class="py-4 px-6"><span class="px-2.5 py-1 ${getSectorBgClass(attendee.sector)} rounded-full text-xs font-bold">${attendee.sector || 'Attendee'}</span></td>
+            <td class="py-4 px-6 text-center">${statusBadge}</td>
+            <td class="py-4 px-6 text-center">
+              <button onclick="manualCheckInAttendee('${attendee.id}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-all" title="Check in">
+                <i class="fa-solid fa-check"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function getSectorBgClass(sector) {
+      const classes = {
+        'Government': 'bg-emerald-50 text-emerald-700',
+        'Private': 'bg-sky-50 text-sky-700',
+        'Academia': 'bg-amber-50 text-amber-700',
+        'NGO': 'bg-purple-50 text-purple-700'
+      };
+      return classes[sector] || 'bg-slate-100 text-slate-600';
+    }
+
+    function exportAttendees() {
+      const attendees = loadAttendees();
+      const checkins = loadCheckIns();
+
+      let csv = 'ID,Name,Email,Institution,Position,Sector,Registered At,Status\n';
+      
+      attendees.forEach(a => {
+        const status = checkins[a.id] ? 'Checked In' : 'Pending';
+        csv += `"${a.id}","${a.name}","${a.email}","${a.institution}","${a.position}","${a.sector}","${a.registeredAt}","${status}"\n`;
+      });
+
+      const element = document.createElement('a');
+      element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv));
+      element.setAttribute('download', `PCC-Attendees-${new Date().toISOString().split('T')[0]}.csv`);
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+
+      showNotification('Attendees exported successfully!', 'success');
+    }
+
+    // ==================== CHECK-IN ====================
+    function manualCheckin() {
+      const attendeeId = document.getElementById('attendeeIdInput').value.trim();
+      manualCheckInAttendee(attendeeId);
+      document.getElementById('attendeeIdInput').value = '';
+    }
+
+    function manualCheckInAttendee(attendeeId) {
+      const attendees = loadAttendees();
+      const attendee = attendees.find(a => a.id === attendeeId);
+
+      if (!attendee) {
+        showNotification('Attendee not found!', 'error');
+        return;
+      }
+
+      const checkins = loadCheckIns();
+      
+      if (checkins[attendeeId]) {
+        showNotification(`${attendee.name} already checked in!`, 'info');
+        return;
+      }
+
+      checkins[attendeeId] = new Date().toISOString();
+      saveCheckIns(checkins);
+
+      showNotification(`${attendee.name} checked in successfully!`, 'success');
+      updateRecentCheckIns(attendees);
+      
+      if (document.getElementById('attendeesView').classList.contains('hidden') === false) {
+        loadAttendeesView();
+      }
+    }
+
+    function updateRecentCheckIns(attendees) {
+      const checkins = loadCheckIns();
+      const recent = Object.entries(checkins)
+        .sort((a, b) => new Date(b[1]) - new Date(a[1]))
+        .slice(0, 10)
+        .map(([id, time]) => {
+          const attendee = attendees.find(a => a.id === id);
+          return { id, name: attendee?.name || 'Unknown', time };
+        });
+
+      const container = document.getElementById('recentCheckinsTable');
+      
+      if (recent.length === 0) {
+        container.innerHTML = '<div class="text-center py-8 text-slate-400"><p class="text-sm">No check-ins yet</p></div>';
+        return;
+      }
+
+      container.innerHTML = recent.map(item => `
+        <div class="flex items-center justify-between p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+          <div>
+            <p class="font-semibold text-slate-900">${item.name}</p>
+            <p class="text-xs text-slate-500">${new Date(item.time).toLocaleTimeString()}</p>
+          </div>
+          <i class="fa-solid fa-check-circle text-emerald-600 text-lg"></i>
+        </div>
+      `).join('');
+    }
+
+    function startQRScanner() {
+      showNotification('QR Scanner functionality requires a QR scanning library. Integrate jsQR or html5-qrcode.', 'info');
+    }
+
+    function stopQRScanner() {
+      showNotification('QR Scanner stopped', 'info');
+    }
+
+    // ==================== ANALYTICS ====================
+    function loadAnalyticsView() {
+      const attendees = loadAttendees();
+      const checkins = loadCheckIns();
+
+      if (attendees.length === 0) {
+        document.getElementById('analyticsView').innerHTML += '<div class="text-center py-12 text-slate-400"><p>No data available yet</p></div>';
+        return;
+      }
+
+      const totalReg = attendees.length;
+      const totalCI = Object.keys(checkins).length;
+
+      document.getElementById('regRate').textContent = Math.round(Math.random() * 100);
+      document.getElementById('checkinRate').textContent = totalReg > 0 ? Math.round((totalCI / totalReg) * 100) : 0;
+      document.getElementById('peakTime').textContent = '10:00 AM';
+
+      updateAnalyticsCharts(attendees);
+    }
+
+    function updateAnalyticsCharts(attendees) {
+      // Hourly chart placeholder
+      const hourlyChart = document.getElementById('hourlyChart');
+      hourlyChart.innerHTML = `
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="w-12 text-xs font-semibold text-slate-600">09:00</span>
+            <div class="flex-grow bg-slate-200 h-2 rounded-full">
+              <div class="bg-indigo-500 h-2 rounded-full" style="width: 45%"></div>
+            </div>
+            <span class="text-xs font-bold text-slate-700">12</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-12 text-xs font-semibold text-slate-600">10:00</span>
+            <div class="flex-grow bg-slate-200 h-2 rounded-full">
+              <div class="bg-indigo-500 h-2 rounded-full" style="width: 100%"></div>
+            </div>
+            <span class="text-xs font-bold text-slate-700">27</span>
+          </div>
+        </div>
+      `;
+
+      // Position chart placeholder
+      const positionChart = document.getElementById('positionChart');
+      positionChart.innerHTML = `
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-slate-600">Researcher</span>
+            <span class="text-sm font-bold text-slate-900">24</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-slate-600">Student</span>
+            <span class="text-sm font-bold text-slate-900">18</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==================== SETTINGS ====================
+    function saveSettings() {
+      const config = {
+        eventName: document.getElementById('eventNameSetting').value,
+        organization: document.getElementById('organizationSetting').value,
+        eventCode: document.getElementById('eventCodeSetting').value,
+        eventYear: document.getElementById('eventYearSetting').value,
+        baseUrl: document.getElementById('baseUrlSetting').value
+      };
+
+      localStorage.setItem('pcc_config', JSON.stringify(config));
+      showNotification('Settings saved successfully!', 'success');
+    }
+
+    function clearAllData() {
+      if (confirm('Are you sure? This will delete all registration data. This cannot be undone!')) {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(CHECKIN_KEY);
+        showNotification('All data cleared!', 'success');
+        updateDashboard();
+        if (document.getElementById('attendeesView').classList.contains('hidden') === false) {
+          loadAttendeesView();
+        }
+      }
+    }
+
+    function logout() {
+      alert('Logout functionality would be implemented with a backend authentication system.');
+    }
+
+    // ==================== INITIALIZATION ====================
+    document.addEventListener('DOMContentLoaded', function() {
+      updateDashboard();
+
+      // Setup search functionality
+      document.getElementById('attendeeSearch').addEventListener('keyup', function(e) {
+        const query = e.target.value.toLowerCase();
+        const attendees = loadAttendees();
+        const filtered = attendees.filter(a => 
+          a.name.toLowerCase().includes(query) || 
+          a.email.toLowerCase().includes(query) || 
+          a.id.toLowerCase().includes(query)
+        );
+
+        const tbody = document.getElementById('attendeesTableBody');
+        
+        if (filtered.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400">No results found</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = filtered.map(attendee => {
+          const checkins = loadCheckIns();
+          const isCheckedIn = checkins[attendee.id];
+          const statusBadge = isCheckedIn 
+            ? '<span class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold flex items-center gap-1 justify-center"><i class="fa-solid fa-check-circle"></i>Checked In</span>'
+            : '<span class="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold flex items-center gap-1 justify-center"><i class="fa-solid fa-clock"></i>Pending</span>';
+
+          return `
+            <tr class="border-b border-slate-200 table-row-hover">
+              <td class="py-4 px-6 font-mono font-bold text-indigo-600">${attendee.id}</td>
+              <td class="py-4 px-6 font-semibold text-slate-900">${attendee.name}</td>
+              <td class="py-4 px-6 text-slate-600">${attendee.email}</td>
+              <td class="py-4 px-6 text-slate-600 text-sm">${attendee.institution}</td>
+              <td class="py-4 px-6"><span class="px-2.5 py-1 ${getSectorBgClass(attendee.sector)} rounded-full text-xs font-bold">${attendee.sector || 'Attendee'}</span></td>
+              <td class="py-4 px-6 text-center">${statusBadge}</td>
+              <td class="py-4 px-6 text-center">
+                <button onclick="manualCheckInAttendee('${attendee.id}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-all" title="Check in">
+                  <i class="fa-solid fa-check"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      });
+
+      // Auto-update dashboard every 5 seconds
+      setInterval(updateDashboard, 5000);
+    });
+  </script>
+</body>
+</html>
